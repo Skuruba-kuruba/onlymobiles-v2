@@ -210,10 +210,10 @@
   <!-- ── STORE ── -->
   <div class="page active" id="page-store">
     <div class="api-bar">
-      <div><span>GET</span> <em>/api/products</em> &nbsp;·&nbsp; Connected to: <span id="api-url-display">http://localhost:3000</span></div>
+      <div><span>GET</span> <em>/api/products</em> &nbsp;·&nbsp; Connected to: <span id="api-url-display"></span></div>
       <input id="api-base-input"
         style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:4px;padding:3px 8px;font-family:monospace;font-size:11px;width:220px"
-        placeholder="http://localhost:3000" value="http://localhost:3000"
+        placeholder="" value=""
         oninput="updateBase(this.value)">
     </div>
     <div class="page-title">Smartphones</div>
@@ -324,7 +324,7 @@
 </main>
 
 <script>
-let API_BASE = 'http://localhost:3000';
+let API_BASE = window.location.origin;
 let cart = {};
 let siteOnline = true;
 let monitorTimer = null;
