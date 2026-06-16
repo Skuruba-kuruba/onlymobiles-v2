@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OnlyMobiles — Smartphone Testing Platform</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --border: #dde1e9;
+    --border-strong: #bcc3d0;
+    --text: #0d1117;
+    --text-muted: #57606a;
+    --text-faint: #8c959f;
+    --accent: #0969da;
+    --accent-hover: #0550ae;
+    --accent-light: #ddf4ff;
+    --green: #1a7f37;
+    --green-bg: #dafbe1;
+    --red: #cf222e;
+    --red-bg: #ffebe9;
+    --amber: #9a6700;
+    --amber-bg: #fff8c5;
+    --radius: 12px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* ── Header ── */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; letter-spacing: -0.03em; }
+  .logo .only { color: var(--text); }
+  .logo .mobiles { color: var(--accent); }
+  nav { display: flex; gap: 4px; }
+  nav button { background: transparent; border: none; padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text-muted); font-weight: 500; transition: background 0.15s; }
+  nav button:hover { background: var(--bg); }
+  nav button.active { background: var(--bg); color: var(--text); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .site-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; }
+  .site-badge.online  { background: var(--green-bg); color: var(--green); }
+  .site-badge.offline { background: var(--red-bg);   color: var(--red);   }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot.on  { background: var(--green); }
+  .dot.off { background: var(--red);   }
+  .toggle-btn { padding: 6px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; font-size: 12px; font-weight: 500; background: var(--surface); transition: all 0.15s; }
+  .toggle-btn:hover { border-color: var(--border-strong); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── API bar ── */
+  .api-bar { background: #161b22; color: #c9d1d9; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-family: 'Courier New', monospace; font-size: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border: 1px solid #30363d; }
+  .api-bar span { color: #79c0ff; }
+  .api-bar em   { color: #56d364; font-style: normal; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+  /* ── Filter bar ── */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 12px; cursor: pointer; font-weight: 500; color: var(--text-muted); transition: all 0.15s; }
+  .filter-btn:hover  { border-color: var(--border-strong); color: var(--text); }
+  .filter-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── Product grid ── */
+  .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .product-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; cursor: default; }
+  .product-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
+
+  .product-img-wrap { height: 180px; display: flex; align-items: center; justify-content: center; background: linear-gradient(160deg, #f6f8ff 0%, #eaeef8 100%); position: relative; overflow: hidden; }
+  .product-img-wrap img { height: 148px; width: auto; max-width: 120px; object-fit: contain; transition: transform 0.35s ease; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.12)); }
+  .product-card:hover .product-img-wrap img { transform: translateY(-6px) scale(1.04); }
+
+  /* Glare streak on hover */
+  .product-img-wrap::after { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .product-card:hover .product-img-wrap::after { opacity: 1; }
+
+  .brand-tag { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.92); border: 1px solid var(--border); border-radius: 10px; font-size: 10px; font-weight: 700; padding: 2px 8px; color: var(--text-muted); letter-spacing: 0.04em; backdrop-filter: blur(4px); }
+  .storage-tag { position: absolute; top: 10px; right: 10px; background: var(--accent-light); border: 1px solid #b6d4fe; border-radius: 10px; font-size: 10px; font-weight: 600; padding: 2px 7px; color: var(--accent); }
+
+  .product-body { padding: 14px; }
+  .product-cat  { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+  .product-name { font-weight: 700; font-size: 14px; margin-bottom: 4px; line-height: 1.3; }
+  .product-price { font-size: 17px; font-weight: 800; color: var(--accent); margin-bottom: 12px; }
+  .add-btn { width: 100%; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); padding: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; letter-spacing: 0.01em; }
+  .add-btn:hover    { background: var(--accent-hover); }
+  .add-btn:disabled { background: var(--border-strong); cursor: not-allowed; }
+
+  /* ── Cart ── */
+  .cart-wrap { max-width: 580px; }
+  .cart-row  { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+  .cart-row:last-child { border-bottom: none; }
+  .cart-phone-img { width: 40px; height: 60px; object-fit: contain; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 4px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+  .cart-item-info { flex: 1; min-width: 0; }
+  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+  .qty-btn  { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: background 0.12s; }
+  .qty-btn:hover { background: var(--border); }
+  .cart-total-row  { display: flex; justify-content: space-between; align-items: center; padding: 14px 0 0; font-size: 17px; font-weight: 800; }
+  .checkout-btn    { width: 100%; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 14px; transition: background 0.15s; }
+  .checkout-btn:hover { background: var(--accent-hover); }
+
+  /* ── Monitor ── */
+  .monitor-tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .mtab { background: transparent; border: none; padding: 8px 16px; cursor: pointer; font-size: 13px; color: var(--text-muted); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .mtab:hover  { color: var(--text); }
+  .mtab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .mpane { display: none; }
+  .mpane.active { display: block; }
+
+  .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .metric-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 16px; text-align: center; }
+  .metric-box .label { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .metric-box .val   { font-size: 32px; font-weight: 800; color: var(--accent); }
+  .metric-box .sub   { font-size: 12px; color: var(--text-faint); margin-top: 4px; }
+
+  .bar-row   { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .bar-lbl   { font-size: 12px; color: var(--text-muted); min-width: 130px; }
+  .bar-track { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+  .bar-fill  { height: 100%; border-radius: 4px; transition: width 0.45s ease; }
+  .bar-cnt   { font-size: 12px; color: var(--text-muted); min-width: 28px; text-align: right; font-weight: 600; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--bg); }
+
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-ok        { background: var(--green-bg); color: var(--green); }
+  .badge-cancelled { background: #f6f8fa; color: #8c959f; }
+
+  .cancel-order-btn { background: none; border: 1px solid #ffb8b8; color: var(--red); border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; font-weight: 600; transition: background 0.15s; }
+  .cancel-order-btn:hover    { background: var(--red-bg); }
+  .cancel-order-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Toast ── */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: #161b22; color: #c9d1d9; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 13px; z-index: 9999; opacity: 0; transition: opacity 0.25s; pointer-events: none; max-width: 320px; border: 1px solid #30363d; }
+  #toast.show { opacity: 1; }
+
+  /* ── Offline overlay ── */
+  #offline-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 500; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+  #offline-overlay.show { display: flex; }
+  #offline-overlay h2 { color: white; font-size: 22px; font-weight: 700; }
+  #offline-overlay p  { color: #8c959f; font-size: 14px; }
+  #offline-overlay button { background: white; color: var(--text); border: none; border-radius: var(--radius-sm); padding: 10px 28px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+
+  /* ── API docs ── */
+  .endpoint-card   { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+  .endpoint-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; }
+  .endpoint-header:hover { background: var(--bg); }
+  .method        { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: monospace; }
+  .method.get    { background: #dbeafe; color: #1d4ed8; }
+  .method.post   { background: #d1fae5; color: #065f46; }
+  .method.patch  { background: #fef3c7; color: #92400e; }
+  .method.delete { background: #fee2e2; color: #991b1b; }
+  .endpoint-path { font-family: monospace; font-size: 13px; font-weight: 600; }
+  .endpoint-desc { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+  .endpoint-body { padding: 14px 16px; border-top: 1px solid var(--border); background: var(--bg); display: none; }
+  .endpoint-body.open { display: block; }
+  .code-block { background: #161b22; color: #c9d1d9; border-radius: var(--radius-sm); padding: 12px; font-family: monospace; font-size: 12px; white-space: pre; overflow-x: auto; margin-top: 8px; border: 1px solid #30363d; }
+  .section-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .empty-state      { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+  .page-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.02em; }
+  .page-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+
+  @media (max-width: 640px) {
+    main { padding: 14px; }
+    .metric-row { grid-template-columns: 1fr; }
+    nav button  { padding: 6px 10px; font-size: 12px; }
+    .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .product-img-wrap { height: 140px; }
+    .product-img-wrap img { height: 110px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div id="offline-overlay">
+  <div style="font-size:60px">📵</div>
+  <h2>OnlyMobiles is offline</h2>
+  <p>Maintenance mode is active. Use the header toggle to bring the store back up.</p>
+  <button onclick="bringOnline()">Bring store online</button>
+</div>
+
+<header>
+  <div class="logo">📱 <span class="only">Only</span><span class="mobiles">Mobiles</span></div>
+  <nav>
+    <button class="active" onclick="switchPage('store',this)">Store</button>
+    <button onclick="switchPage('cart',this)">Cart <span id="cart-badge" style="background:var(--accent);color:white;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700">0</span></button>
+    <button onclick="switchPage('monitor',this)">Monitor</button>
+    <button onclick="switchPage('apidocs',this)">API docs</button>
+  </nav>
+  <div class="header-right">
+    <div class="site-badge online" id="site-badge"><div class="dot on" id="site-dot"></div><span id="site-label">Online</span></div>
+    <button class="toggle-btn" id="toggle-btn" onclick="toggleSite()">Take offline</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── STORE ── -->
+  <div class="page active" id="page-store">
+    <div class="api-bar">
+      <div><span>GET</span> <em>/api/products</em> &nbsp;·&nbsp; Connected to: <span id="api-url-display">http://localhost:3000</span></div>
+      <input id="api-base-input"
+        style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:4px;padding:3px 8px;font-family:monospace;font-size:11px;width:220px"
+        placeholder="http://localhost:3000" value="http://localhost:3000"
+        oninput="updateBase(this.value)">
+    </div>
+    <div class="page-title">Smartphones</div>
+    <div class="page-sub" id="product-count-sub">8 phones · OnlyMobiles curated catalog</div>
+
+    <div class="filter-bar">
+      <span style="font-size:12px;color:var(--text-muted);font-weight:600">Filter:</span>
+      <button class="filter-btn active" onclick="filterProducts('all',this)">All</button>
+      <button class="filter-btn" onclick="filterProducts('Flagship',this)">Flagship</button>
+      <button class="filter-btn" onclick="filterProducts('Mid-Range',this)">Mid-Range</button>
+      <button class="filter-btn" onclick="filterProducts('Budget',this)">Budget</button>
+    </div>
+
+    <div class="product-grid" id="product-grid">
+      <div class="empty-state"><div class="icon">⏳</div>Loading phones...</div>
+    </div>
+  </div>
+
+  <!-- ── CART ── -->
+  <div class="page" id="page-cart">
+    <div class="page-title">Cart</div>
+    <div class="page-sub">Review your selections before placing an order</div>
+    <div class="cart-wrap card" style="padding:16px">
+      <div id="cart-empty" class="empty-state"><div class="icon">📱</div><p>Your cart is empty</p></div>
+      <div id="cart-filled" style="display:none">
+        <div id="cart-items"></div>
+        <div class="cart-total-row"><span>Total</span><span id="cart-total">₹0</span></div>
+        <button class="checkout-btn" onclick="placeOrder()">Place order →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MONITOR ── -->
+  <div class="page" id="page-monitor">
+    <div class="page-title">Order monitor</div>
+    <div class="page-sub">Live order counts · 1hr / 6hr / 12hr windows · auto-refreshes every 10s · cancelled orders excluded</div>
+
+    <div class="monitor-tabs">
+      <button class="mtab active" onclick="switchMonitor('summary',this)">Summary</button>
+      <button class="mtab" onclick="switchMonitor('1hr',this)">1-hour</button>
+      <button class="mtab" onclick="switchMonitor('6hr',this)">6-hour</button>
+      <button class="mtab" onclick="switchMonitor('12hr',this)">12-hour</button>
+      <button class="mtab" onclick="switchMonitor('log',this)">Order log</button>
+    </div>
+
+    <div class="mpane active" id="mpane-summary">
+      <div class="metric-row">
+        <div class="metric-box">
+          <div class="label">Last 1 hr</div>
+          <div class="val" id="m1h">—</div>
+          <div class="sub" id="t1h">fetching...</div>
+        </div>
+        <div class="metric-box">
+          <div class="label">Last 6 hrs</div>
+          <div class="val" id="m6h">—</div>
+          <div class="sub" id="t6h">fetching...</div>
+        </div>
+        <div class="metric-box">
+          <div class="label">Last 12 hrs</div>
+          <div class="val" id="m12h">—</div>
+          <div class="sub" id="t12h">fetching...</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-faint);margin-top:8px">Last refreshed: <span id="last-refreshed">—</span></p>
+    </div>
+
+    <div class="mpane" id="mpane-1hr">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Orders in the last 60 minutes — 10-minute slots</p>
+      <div id="slots-1hr"></div>
+    </div>
+    <div class="mpane" id="mpane-6hr">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Orders in the last 6 hours — 30-minute slots</p>
+      <div id="slots-6hr"></div>
+    </div>
+    <div class="mpane" id="mpane-12hr">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">Orders in the last 12 hours — 1-hour slots</p>
+      <div id="slots-12hr"></div>
+    </div>
+
+    <div class="mpane" id="mpane-log">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--text-muted)">All orders, most recent first. Click Cancel to cancel an order.</span>
+        <button onclick="resetOrders()" style="background:var(--red-bg);color:var(--red);border:1px solid #ffb8b8;border-radius:var(--radius-sm);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">Reset all orders</button>
+      </div>
+      <div class="card" style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Order ID</th><th>Amount</th><th>Phones</th><th>Status</th><th>Time</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="order-log-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── API DOCS ── -->
+  <div class="page" id="page-apidocs">
+    <div class="page-title">API reference</div>
+    <div class="page-sub">Base URL: <code style="background:var(--bg);padding:2px 7px;border-radius:4px;font-size:12px" id="base-url-label">http://localhost:3000</code></div>
+    <div style="margin-bottom:20px"><div class="section-title">Site control</div><div id="doc-site"></div></div>
+    <div style="margin-bottom:20px"><div class="section-title">Products (Phones)</div><div id="doc-products"></div></div>
+    <div style="margin-bottom:20px"><div class="section-title">Orders</div><div id="doc-orders"></div></div>
+    <div><div class="section-title">Monitor</div><div id="doc-monitor"></div></div>
+  </div>
+
+</main>
+
+<script>
+let API_BASE = 'http://localhost:3000';
+let cart = {};
+let siteOnline = true;
+let monitorTimer = null;
+let allProducts = [];
+
+// ── Phone images (Unsplash, free, no auth) ────────────────────────────────
+const PHONE_IMAGES = {
+  1: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300&h=400&fit=crop&auto=format', // iPhone 15 Pro
+  2: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=300&h=400&fit=crop&auto=format', // Samsung Galaxy
+  3: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&h=400&fit=crop&auto=format', // Pixel
+  4: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=400&fit=crop&auto=format', // OnePlus style
+  5: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=300&h=400&fit=crop&auto=format', // Xiaomi style
+  6: 'https://images.unsplash.com/photo-1574755393849-623942496936?w=300&h=400&fit=crop&auto=format', // Samsung A series
+  7: 'https://images.unsplash.com/photo-1667210064812-7c2b2a0ab6c0?w=300&h=400&fit=crop&auto=format', // Nothing phone
+  8: 'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=300&h=400&fit=crop&auto=format', // iPhone 15
+};
+
+const PRODUCTS_LOCAL = [
+  {id:1,name:'iPhone 15 Pro',price:134900,category:'Flagship',brand:'Apple',emoji:'📱',storage:'256GB'},
+  {id:2,name:'Galaxy S24 Ultra',price:129999,category:'Flagship',brand:'Samsung',emoji:'📲',storage:'512GB'},
+  {id:3,name:'Pixel 8 Pro',price:106999,category:'Flagship',brand:'Google',emoji:'🔵',storage:'256GB'},
+  {id:4,name:'OnePlus 12',price:64999,category:'Mid-Range',brand:'OnePlus',emoji:'⚡',storage:'256GB'},
+  {id:5,name:'Redmi Note 13 Pro+',price:31999,category:'Budget',brand:'Xiaomi',emoji:'🔴',storage:'256GB'},
+  {id:6,name:'Galaxy A55',price:38999,category:'Mid-Range',brand:'Samsung',emoji:'💜',storage:'128GB'},
+  {id:7,name:'Nothing Phone (2a)',price:23999,category:'Budget',brand:'Nothing',emoji:'⚪',storage:'128GB'},
+  {id:8,name:'iPhone 15',price:79900,category:'Mid-Range',brand:'Apple',emoji:'🍎',storage:'128GB'},
+];
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+function toast(msg, dur=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function updateBase(v) {
+  API_BASE = v.replace(/\/$/, '');
+  document.getElementById('api-url-display').textContent = API_BASE;
+  document.getElementById('base-url-label').textContent  = API_BASE;
+  loadProducts();
+}
+
+async function apiFetch(path, opts={}) {
+  const res = await fetch(API_BASE + path, { headers: {'Content-Type':'application/json'}, ...opts });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data;
+}
+
+// ── Site toggle ───────────────────────────────────────────────────────────
+async function toggleSite() {
+  const newState = !siteOnline;
+  try {
+    await apiFetch('/api/site/toggle', { method:'POST', body: JSON.stringify({ online: newState }) });
+    setSiteState(newState);
+    toast(newState ? '✅ Store is back online' : '📵 Store taken offline');
+  } catch(e) {
+    setSiteState(newState);
+    toast(newState ? '✅ Store online (UI only)' : '📵 Store offline (UI only)');
+  }
+}
+
+function setSiteState(online) {
+  siteOnline = online;
+  const badge   = document.getElementById('site-badge');
+  const dot     = document.getElementById('site-dot');
+  const label   = document.getElementById('site-label');
+  const btn     = document.getElementById('toggle-btn');
+  const overlay = document.getElementById('offline-overlay');
+  if (online) {
+    badge.className='site-badge online'; dot.className='dot on';
+    label.textContent='Online'; btn.textContent='Take offline';
+    overlay.classList.remove('show');
+  } else {
+    badge.className='site-badge offline'; dot.className='dot off';
+    label.textContent='Offline'; btn.textContent='Bring online';
+    overlay.classList.add('show');
+  }
+  document.querySelectorAll('.add-btn').forEach(b => b.disabled = !online);
+}
+
+async function bringOnline() { await toggleSite(); }
+
+// ── Products ──────────────────────────────────────────────────────────────
+async function loadProducts() {
+  try {
+    const data = await apiFetch('/api/products');
+    allProducts = data.products;
+    renderProducts(allProducts);
+  } catch(e) {
+    allProducts = PRODUCTS_LOCAL;
+    renderProducts(PRODUCTS_LOCAL);
+    if (e.error === 'SERVICE_UNAVAILABLE') setSiteState(false);
+  }
+}
+
+function filterProducts(cat, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const list = cat === 'all' ? allProducts : allProducts.filter(p => p.category === cat);
+  renderProducts(list);
+}
+
+function renderProducts(products) {
+  document.getElementById('product-count-sub').textContent =
+    `${products.length} phone${products.length !== 1 ? 's' : ''} · OnlyMobiles curated catalog`;
+  if (!products.length) {
+    document.getElementById('product-grid').innerHTML =
+      '<div class="empty-state"><div class="icon">🔍</div><p>No phones in this category</p></div>';
+    return;
+  }
+  document.getElementById('product-grid').innerHTML = products.map(p => `
+    <div class="product-card">
+      <div class="product-img-wrap">
+        <span class="brand-tag">${p.brand.toUpperCase()}</span>
+        <span class="storage-tag">${p.storage}</span>
+        <img src="${PHONE_IMAGES[p.id] || ''}" alt="${p.name}"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+          loading="lazy">
+        <div style="display:none;font-size:52px;width:100%;height:100%;align-items:center;justify-content:center">${p.emoji||'📱'}</div>
+      </div>
+      <div class="product-body">
+        <div class="product-cat">${p.category}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">₹${p.price.toLocaleString('en-IN')}</div>
+        <button class="add-btn"
+          onclick="addToCart(${p.id},'${p.name.replace(/'/g,"\\'").replace(/\(/g,'\\(').replace(/\)/g,'\\)')}',${p.price},${p.id})"
+          ${!siteOnline ? 'disabled' : ''}>
+          Add to cart
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function addToCart(id, name, price, imgKey) {
+  if (!siteOnline) { toast('❌ Store is offline'); return; }
+  if (!cart[id]) cart[id] = { name, price, qty: 0, imgKey };
+  cart[id].qty++;
+  updateCartBadge();
+  toast(`📱 Added ${name}`);
+}
+
+function updateCartBadge() {
+  const total = Object.values(cart).reduce((s,i) => s+i.qty, 0);
+  document.getElementById('cart-badge').textContent = total;
+  renderCart();
+}
+
+function renderCart() {
+  const items = Object.entries(cart).filter(([,v]) => v.qty > 0);
+  document.getElementById('cart-empty').style.display  = items.length ? 'none'  : 'block';
+  document.getElementById('cart-filled').style.display = items.length ? 'block' : 'none';
+  if (!items.length) return;
+  let html = '', total = 0;
+  items.forEach(([id, v]) => {
+    total += v.price * v.qty;
+    html += `<div class="cart-row">
+      <img class="cart-phone-img" src="${PHONE_IMAGES[v.imgKey]||''}" alt="${v.name}"
+        onerror="this.style.display='none'" loading="lazy">
+      <div class="cart-item-info">
+        <div style="font-weight:700;font-size:13px">${v.name}</div>
+        <div style="font-size:12px;color:var(--text-muted)">₹${v.price.toLocaleString('en-IN')} each</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty(${id},-1)">−</button>
+        <span style="min-width:22px;text-align:center;font-weight:700">${v.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${id},1)">+</button>
+        <span style="min-width:80px;text-align:right;font-weight:800;color:var(--accent)">₹${(v.price*v.qty).toLocaleString('en-IN')}</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('cart-items').innerHTML = html;
+  document.getElementById('cart-total').textContent = '₹' + total.toLocaleString('en-IN');
+}
+
+function changeQty(id, delta) {
+  if (cart[id]) { cart[id].qty += delta; if (cart[id].qty <= 0) delete cart[id]; }
+  updateCartBadge();
+}
+
+async function placeOrder() {
+  if (!siteOnline) { toast('❌ Store is offline'); return; }
+  const items = Object.entries(cart).filter(([,v])=>v.qty>0)
+    .map(([id,v])=>({productId:parseInt(id),quantity:v.qty}));
+  if (!items.length) { toast('Cart is empty'); return; }
+  try {
+    const order = await apiFetch('/api/orders', { method:'POST', body: JSON.stringify({ items }) });
+    cart = {}; updateCartBadge();
+    toast(`✅ Order placed: ${order.id}`);
+    fetchMonitorSummary();
+  } catch(e) {
+    if (e.error === 'SERVICE_UNAVAILABLE') { setSiteState(false); toast('❌ Store went offline'); }
+    else toast('❌ Order failed: ' + (e.message||'Unknown error'));
+  }
+}
+
+// ── Cancel Order ──────────────────────────────────────────────────────────
+async function cancelOrder(orderId, btnEl) {
+  if (!confirm(`Cancel order ${orderId}? This cannot be undone.`)) return;
+  btnEl.disabled = true;
+  try {
+    await apiFetch(`/api/orders/${orderId}/cancel`, { method: 'PATCH' });
+    toast(`🚫 Order ${orderId} cancelled`);
+    fetchOrderLog();
+    fetchMonitorSummary();
+  } catch(e) {
+    btnEl.disabled = false;
+    if (e.error === 'ALREADY_CANCELLED') toast('⚠️ Order already cancelled');
+    else toast('❌ Cancel failed: ' + (e.message||'Unknown error'));
+  }
+}
+
+// ── Monitor ───────────────────────────────────────────────────────────────
+async function fetchMonitorSummary() {
+  try {
+    const d = await apiFetch('/api/monitor/summary');
+   document.getElementById('m1h').textContent  = d.windows['1hr'].totalCount;
+document.getElementById('m6h').textContent  = d.windows['6hr'].totalCount;
+document.getElementById('m12h').textContent = d.windows['12hr'].totalCount;
+   document.getElementById('m1h').textContent  = d.windows['1hr'].totalCount;
+document.getElementById('m6h').textContent  = d.windows['6hr'].totalCount;
+document.getElementById('m12h').textContent = d.windows['12hr'].totalCount;
+
+document.getElementById('t1h').textContent =
+  `${d.windows['1hr'].passedCount} confirmed • ${d.windows['1hr'].failedCount} cancelled`;
+
+document.getElementById('t6h').textContent =
+  `${d.windows['6hr'].passedCount} confirmed • ${d.windows['6hr'].failedCount} cancelled`;
+
+document.getElementById('t12h').textContent =
+  `${d.windows['12hr'].passedCount} confirmed • ${d.windows['12hr'].failedCount} cancelled`;
+
+document.getElementById('last-refreshed').textContent =
+  new Date().toLocaleTimeString();
+    document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();
+  } catch(e) { console.warn('Monitor fetch failed', e); }
+}
+
+async function fetchSlots(win, containerId, color) {
+  try {
+    const d = await apiFetch('/api/monitor/' + win);
+    const max = Math.max(...d.slots.map(s=>s.totalCount), 1);
+    document.getElementById(containerId).innerHTML = d.slots.map(s => `
+      <div class="bar-row">
+        <div class="bar-lbl">${s.label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(s.totalCount/max*100)}%;background:${color}"></div></div>
+        <div class="bar-cnt">${s.totalCount}</div>
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById(containerId).innerHTML =
+      '<p style="color:var(--text-muted);font-size:13px">Could not fetch data — is the API running?</p>';
+  }
+}
+
+async function fetchOrderLog() {
+  try {
+    const d = await apiFetch('/api/orders?limit=50');
+    const tbody = document.getElementById('order-log-body');
+    if (!d.orders.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:28px">No orders yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = d.orders.map((o, i) => {
+      const cancelled = o.status === 'cancelled';
+      return `<tr style="${cancelled ? 'opacity:0.55' : ''}">
+        <td style="color:var(--text-muted);font-size:12px">${d.total - i}</td>
+        <td><code style="font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px">${o.id}</code></td>
+        <td style="font-weight:700;${cancelled ? 'text-decoration:line-through' : ''}">₹${o.totalAmount.toLocaleString('en-IN')}</td>
+        <td style="color:var(--text-muted);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.items.map(i=>i.name).join(', ')}</td>
+        <td><span class="badge ${cancelled ? 'badge-cancelled' : 'badge-ok'}">${o.status}</span></td>
+        <td style="color:var(--text-muted);font-size:12px">${new Date(o.createdAt).toLocaleTimeString()}</td>
+        <td>${cancelled
+          ? '<span style="font-size:11px;color:var(--text-faint)">—</span>'
+          : `<button class="cancel-order-btn" onclick="cancelOrder('${o.id}',this)">Cancel</button>`
+        }</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function resetOrders() {
+  if (!confirm('Delete all orders? This cannot be undone.')) return;
+  try {
+    const r = await apiFetch('/api/orders', { method: 'DELETE' });
+    toast('🗑️ ' + r.message);
+    fetchMonitorSummary();
+    fetchOrderLog();
+  } catch(e) { toast('❌ Reset failed'); }
+}
+
+function refreshCurrentMonitorPane() {
+  const active = document.querySelector('.mpane.active');
+  if (!active) return;
+  const id = active.id;
+  if      (id === 'mpane-summary') fetchMonitorSummary();
+  else if (id === 'mpane-1hr')     fetchSlots('1hr',  'slots-1hr',  '#0969da');
+  else if (id === 'mpane-6hr')     fetchSlots('6hr',  'slots-6hr',  '#d97706');
+  else if (id === 'mpane-12hr')    fetchSlots('12hr', 'slots-12hr', '#7c3aed');
+  else if (id === 'mpane-log')     fetchOrderLog();
+}
+
+function startMonitorTimer() {
+  clearInterval(monitorTimer);
+  monitorTimer = setInterval(refreshCurrentMonitorPane, 10000);
+}
+
+// ── Pages ─────────────────────────────────────────────────────────────────
+function switchPage(p, btn) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (p === 'monitor') { fetchMonitorSummary(); startMonitorTimer(); }
+  if (p === 'apidocs') renderApiDocs();
+}
+
+function switchMonitor(tab, btn) {
+  document.querySelectorAll('.mpane').forEach(el => el.classList.remove('active'));
+  document.getElementById('mpane-'+tab).classList.add('active');
+  document.querySelectorAll('.mtab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  refreshCurrentMonitorPane();
+}
+
+// ── API docs ──────────────────────────────────────────────────────────────
+const API_DOCS = {
+  site: [
+    { method:'GET',  path:'/api/site/status', desc:'Get current store status',
+      response:`{ "online": true, "toggledAt": "2024-01-01T10:00:00Z", "totalOrders": 5 }` },
+    { method:'POST', path:'/api/site/toggle', desc:'Toggle store on/off',
+      body:`{ "online": false }`,
+      response:`{ "message": "OnlyMobiles is now offline.", "online": false }` },
+  ],
+  products: [
+    { method:'GET', path:'/api/products', desc:'List all phones (?category= &brand=)',
+      response:`{ "count": 8, "products": [{ "id": 1, "name": "iPhone 15 Pro", "price": 134900, "category": "Flagship", "brand": "Apple", "storage": "256GB", "stock": 20 }] }` },
+    { method:'GET', path:'/api/products/:id', desc:'Get one phone (IDs 1–8)',
+      response:`{ "id": 1, "name": "iPhone 15 Pro", "price": 134900, "brand": "Apple", "storage": "256GB" }` },
+  ],
+  orders: [
+    { method:'POST',   path:'/api/orders',            desc:'Place an order',
+      body:`{ "items": [{ "productId": 1, "quantity": 1 }] }`,
+      response:`{ "id": "OM-0001", "totalAmount": 134900, "status": "confirmed", "createdAt": "..." }` },
+    { method:'GET',    path:'/api/orders',            desc:'List orders (?limit= &offset= &status=)',
+      response:`{ "total": 3, "orders": [...] }` },
+    { method:'GET',    path:'/api/orders/:id',        desc:'Get one order',
+      response:`{ "id": "OM-0001", "items": [...], "status": "confirmed" }` },
+    { method:'PATCH',  path:'/api/orders/:id/cancel', desc:'Cancel a specific order',
+      response:`{ "message": "Order OM-0001 has been cancelled.", "order": { "status": "cancelled", "cancelledAt": "..." } }` },
+    { method:'DELETE', path:'/api/orders',            desc:'Reset all orders (testing only)',
+      response:`{ "message": "Deleted 3 orders. Counter reset." }` },
+  ],
+  monitor: [
+    { method:'GET', path:'/api/monitor/summary', desc:'All 3 windows in one call (cancelled excluded)',
+      response:`{ "windows": { "1hr": { "count": 2 }, "6hr": { "count": 7 }, "12hr": { "count": 15 } } }` },
+    { method:'GET', path:'/api/monitor/1hr',  desc:'10-minute slot breakdown',
+      response:`{ "totalCount": 2, "slots": [{ "slot": 1, "label": "T-10min to T-0min", "count": 2 }] }` },
+    { method:'GET', path:'/api/monitor/6hr',  desc:'30-minute slot breakdown', response:`{ "totalCount": 7, "slots": [...] }` },
+    { method:'GET', path:'/api/monitor/12hr', desc:'60-minute slot breakdown', response:`{ "totalCount": 15, "slots": [...] }` },
+  ],
+};
+
+function renderApiDocs() {
+  ['site','products','orders','monitor'].forEach(section => {
+    document.getElementById('doc-'+section).innerHTML = API_DOCS[section].map((ep, i) => `
+      <div class="endpoint-card">
+        <div class="endpoint-header" onclick="toggleEndpoint('${section}-${i}')">
+          <span class="method ${ep.method.toLowerCase()}">${ep.method}</span>
+          <span class="endpoint-path">${ep.path}</span>
+          <span class="endpoint-desc">${ep.desc}</span>
+        </div>
+        <div class="endpoint-body" id="ep-${section}-${i}">
+          ${ep.body ? `<div style="font-size:12px;font-weight:600;margin-bottom:4px;color:var(--text-muted)">REQUEST BODY</div><div class="code-block">${ep.body}</div>` : ''}
+          <div style="font-size:12px;font-weight:600;margin:10px 0 4px;color:var(--text-muted)">RESPONSE</div>
+          <div class="code-block">${ep.response}</div>
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+            <strong>curl example:</strong>
+            <div class="code-block">curl ${ep.method==='GET' ? '' : '--request '+ep.method+' \\\n     '}${API_BASE}${ep.path}${ep.body ? ` \\\n     --header 'Content-Type: application/json' \\\n     --data '${ep.body}'` : ''}</div>
+          </div>
+        </div>
+      </div>`).join('');
+  });
+}
+
+function toggleEndpoint(id) {
+  document.getElementById('ep-'+id).classList.toggle('open');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+loadProducts();
+</script>
+</body>
+</html>
